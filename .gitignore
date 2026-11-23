@@ -1,0 +1,13 @@
+# Secrets / local-only config
+cli.json
+service.json
+*.key
+*.pem
+
+# Python caches
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# OS
+.DS_Store
