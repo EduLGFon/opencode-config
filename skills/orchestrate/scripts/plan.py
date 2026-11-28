@@ -281,6 +281,10 @@ def build_plan(spec: dict, max_concurrency: int) -> dict:
             )
         elif policy == "tier2-only" and tier != 2:
             warnings.append(f"unit {uid}: model {model!r} is tier {tier}; policy is tier2-only")
+        elif policy == "default" and tier in (2, 3):
+            warnings.append(
+                f"unit {uid}: model {model!r} is tier {tier}; needs a recorded tier {tier} owner approval"
+            )
 
     wave_units = [[{**units[uid], "estimate_usd": estimates[uid]} for uid in wave] for wave in waves]
     return {

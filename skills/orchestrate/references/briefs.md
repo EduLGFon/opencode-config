@@ -86,8 +86,9 @@ Rules for the orchestrator:
 - Keep context factual; do not include the conversation history.
 - If the unit is high risk, say so and state the two-reviewer requirement in the
   acceptance section.
-- State the task model policy in every brief. Under `tier2-only`, the reviewer brief
-  names only tier-2 models and offers no free-tier fallback.
+- State the task model policy in every brief. Under `default`, the brief names only
+  tier 0/1 models unless a tier 2/3 owner approval is recorded; under `tier2-only`,
+  the reviewer brief names only tier-2 models and offers no free-tier fallback.
 - Generate the brief with `plan.py brief`; do not hand-copy the template. Ingest the
   returned JSON with `task.py report`.
 - Give every unit the same context packet path when one exists. It replaces repeated

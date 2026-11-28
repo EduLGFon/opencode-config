@@ -169,7 +169,7 @@ def new_manifest(
         },
         "policy": {
             "name": policy,
-            "max_tier": 2 if policy == "tier2-only" else 3,
+            "max_tier": 2 if policy == "tier2-only" else 1,
             "allow_free": policy != "tier2-only",
         },
         "budget": {"limit_usd": budget_usd, "spent_usd": 0.0},
@@ -400,6 +400,15 @@ def validate_manifest(manifest: dict) -> tuple[list[str], list[str]]:
                 errors.append(
                     f"{prefix}: model {value!r} is tier {model_tier(value)}, policy is tier2-only"
                 )
+        elif policy == "default":
+            value = unit.get("model")
+            tier = model_tier(value) if value else None
+            if tier in (2, 3):
+                scope_need = f"tier {tier}"
+                if not any(scope_need in str(a.get("scope", "")).lower() for a in manifest.get("approvals", [])):
+                    warnings.append(
+                        f"{prefix}: model {value!r} is tier {tier} without a recorded {scope_need} approval"
+                    )
 
     ids = list(units)
     for index, left in enumerate(ids):
@@ -429,8 +438,13 @@ def validate_manifest(manifest: dict) -> tuple[list[str], list[str]]:
             errors.append(f"{prefix}: tier must be 0-3")
         elif policy == "tier2-only" and tier != 2:
             errors.append(f"{prefix}: tier {tier} violates tier2-only")
-        if tier == 3 and not any("tier 3" in str(a.get("scope", "")).lower() for a in manifest.get("approvals", [])):
-            warnings.append(f"{prefix}: tier 3 call without a recorded tier 3 approval")
+        if tier in (2, 3):
+            scope_need = f"tier {tier}"
+            if not any(scope_need in str(a.get("scope", "")).lower() for a in manifest.get("approvals", [])):
+                if policy == "tier2-only" and tier == 2:
+                    pass
+                else:
+                    warnings.append(f"{prefix}: tier {tier} call without a recorded {scope_need} approval")
 
     budget = manifest.get("budget", {})
     limit = budget.get("limit_usd")

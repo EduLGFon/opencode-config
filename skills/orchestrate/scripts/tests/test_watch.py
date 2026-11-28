@@ -141,7 +141,7 @@ class WatchTests(unittest.TestCase):
         rates = next(item for item in payload["checks"] if item["name"] == "rate_limits")
         self.assertEqual(rates["status"], "attention")
         self.assertTrue(any("free twin" in item for item in payload["suggestions"]))
-        self.assertTrue(any("tier-2" in item for item in payload["suggestions"]))
+        self.assertTrue(any("owner approval" in item for item in payload["suggestions"]))
 
     def test_single_rate_limit_below_threshold(self) -> None:
         call = {

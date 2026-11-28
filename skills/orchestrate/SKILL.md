@@ -52,8 +52,11 @@ Investigate (delegate to `explore`) → plan → design contracts → implement
 1. Run `git rev-parse --show-toplevel`. If it fails, ask the owner with the
    `question` tool; worktrees and rebases need git. If the task proceeds without
    git, record the decision after the manifest exists.
-2. Choose the task model policy (`default` unless the owner caps the task at tier 2)
-   and an optional budget. Create the manifest with
+2. Choose the task model policy (`default`: tiers 0-1 only; `tier2-only` only when
+   the owner caps the task at tier 2) and an optional budget. Tier 2 and tier 3
+   launches additionally need an owner approval recorded with
+   `task.py approve --task <slug> --scope "tier 2 <reason>"` (or `"tier 3 <reason>"`)
+   before the first paid launch. Create the manifest with
    `task.py init --task <slug> --repo . --ref <target> [--policy default|tier2-only] [--budget USD] [--start-sha SHA]`,
    or with `plan.py plan SPEC.json --write` when a unit spec already exists. Do not
    create it twice.
@@ -92,7 +95,8 @@ Investigate (delegate to `explore`) → plan → design contracts → implement
   delegation or auto-merge.
 - Security, auth, personal data, migrations and public contracts are delegated:
   high effort, two independent reviewers from two distinct families other than the
-  implementer's (under `tier2-only`, two other tier-2 families), no migration
+  implementer's (under `tier2-only`, two other tier-2 families; a paid reviewer
+  family under `default` only after the owner has explicitly said to use that tier), no migration
   execution against shared data, auto-merge on dual PASS. Reviewers do not share
   findings; disagreement is FAIL.
 - Isolate checks per worktree: assign ports, temp databases/schemas and temp
@@ -109,17 +113,25 @@ Investigate (delegate to `explore`) → plan → design contracts → implement
 
 ## 3. Choose the model
 
+As default, the orchestrator may only use tier 0 and tier 1 models. Tier 2 and
+tier 3 are forbidden unless the owner explicitly says to use them. Do not ask or
+prompt for paid tiers; if free tiers are exhausted, mark the unit BLOCKED and
+report, and wait for the owner to say so. Only when the owner has explicitly
+requested a paid tier, record
+`task.py approve --task <slug> --scope "tier 2 <reason>"` (or `"tier 3 <reason>"`)
+before the first paid launch. Never infer approval from task difficulty, quota
+pressure, or a missing free model.
+
 Start at tier 0. Match the task to the family; escalate within the family before
-switching. Tier 2 is pre-approved; tier 3 needs owner approval via the `question`
-tool. Raise the variant before paying; free models stay free at any variant. Never
-invent a model ID or variant. Exact IDs, variants, families and twins are only in
-`references/models.md`.
+switching. Raise the variant before switching family; free models stay free at any
+variant. Never invent a model ID or variant. Exact IDs, variants, families and
+twins are only in `references/models.md`.
 
 Every task has a model policy, recorded in its header:
 
 | Policy | Launch rule |
 | --- | --- |
-| `default` | Start at tier 0 and escalate through the ladder. |
+| `default` | Tiers 0-1 only. Escalate variant, then family, then free twin. Tier 2/3 only after a recorded owner approval. |
 | `tier2-only` | Use the tier-2 pool for every launch; never tier 0, tier 1 or tier 3. |
 
 `tier2-only` is opt-in: set it only when the owner asks to cap the task at tier 2.
@@ -134,7 +146,7 @@ in `references/escalation.md` apply and bind sooner because every call is paid.
 | --- | --- |
 | 0 | Free on `opencode` |
 | 1 | Free on `opencode-go` |
-| 2 | Pre-approved paid open models listed in `references/models.md` |
+| 2 | Paid open models listed in `references/models.md`; owner approval required |
 | 3 | Everything else; owner approval required |
 
 Rules:
@@ -144,13 +156,14 @@ Rules:
   A lone `git commit -m` may be run by the orchestrator; it is not a product edit.
 - Format: `provider/model#variant`; `none` takes no suffix.
 - Put the implementer's model and family in the reviewer brief. Choose a reviewer
-  from a different family: `default` takes a free model first, then the tier-2
-  reviewer family for high-risk or hard units; `tier2-only` takes a different
-  tier-2 family. Never rely on the agent default by accident.
-- Quota exhausted: `default` uses the free twin, then the tier-2 family;
-  `tier2-only` uses another tier-2 family. If a model is unavailable or disappears
-  from the catalog, refresh `references/models.md` and use a twin or next tier
-  within the active policy; never retry the dead ID.
+  from a different family: `default` takes a free model first; a tier-2 reviewer
+  family only after the owner has explicitly said to use tier 2; `tier2-only` takes
+  a different tier-2 family. Never rely on the agent default by accident.
+- Quota exhausted: `default` uses the free twin, then returns BLOCKED and asks the
+  owner before any paid tier; `tier2-only` uses another tier-2 family. If a model
+  is unavailable or disappears from the catalog, refresh `references/models.md`
+  and use a twin or the next free tier within the active policy; never retry the
+  dead ID and never jump to a paid tier without a recorded owner approval.
 
 ## 4. Launch a worker
 
@@ -216,12 +229,13 @@ Full matrix, stall bounds, caps and task budget: `references/escalation.md`.
   unit, update `depends-on` or ownership, re-check overlap, and re-plan before it
   continues.
 - A missing or unavailable model: refresh `references/models.md`, use a twin or the
-  next tier within the active model policy, and update the reference. Never retry a
-  dead ID.
+  next free tier within the active model policy, and update the reference. Never
+  retry a dead ID and never move to a paid tier without a recorded owner approval.
 - Run `watch.py --task <slug>` at the start of every turn. Exit 1 means an overdue
   unit, a rate limit or the budget warning threshold: inspect, resume with findings
-  or switch model within the policy. Exit 2 means a stalled unit or an exceeded
-  budget: mark the unit blocked and stop spending. The detector never kills a child.
+  or switch model within the policy (a paid tier only with a recorded owner
+  approval). Exit 2 means a stalled unit or an exceeded budget: mark the unit
+  blocked and stop spending. The detector never kills a child.
 - No status or kill tool exists for a running child. A stall is only observable when
   you next get a turn. Keep the stalled worktree and branch, mark them blocked, and
   never remove, rebase or merge them while the child may still be running. Start a
@@ -289,6 +303,9 @@ Detailed G3/G4 procedure: `references/integration.md`.
 - BLOCKED and NO-OP are never merged, even when checks are green.
 - Auto-merge every unit that passes G2, including risk units after the required dual
   review. Do not stop to ask before a normal merge.
+- `default` is binding for the whole task: no tier 2 or tier 3 launch, including
+  reviewers and utility, until the owner directly requests it and the approval is
+  recorded with `task.py approve`.
 - `tier2-only` is binding for the whole task: no tier 0, tier 1 or tier 3 launch,
   including reviewers and utility, until the owner changes the recorded policy.
 - Other orchestrators may be active: disjoint ownership, unique names, shared-state
@@ -302,6 +319,7 @@ Detailed G3/G4 procedure: `references/integration.md`.
   evidence or mark the unit blocked. Full command logs go to `evidence/`, not chat.
 - Ask the owner with the `question` tool for tier 3 models (including lifting
   `tier2-only`), non-git repos, ambiguity, force removal and destructive git
-  operations.
+  operations. Tier 2 is never prompted for under `default`; it is used only after
+  the owner explicitly says to.
 - Repo instructions win over this skill, except on security and privacy, where the
   stricter rule wins.

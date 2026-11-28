@@ -54,8 +54,9 @@ Read-only. Run it at the start of every orchestrator turn.
 | 1 | overdue unit, rate limit, budget >= warn | inspect, switch model or resume with findings |
 | 2 | stalled unit or budget exceeded | mark blocked, stop spending, report |
 
-Suggestions respect the task policy: `default` uses the free twin before tier 2;
-`tier2-only` stays in the tier-2 pool and never falls back to free.
+Suggestions respect the task policy: `default` uses the free twin and then asks
+the owner before any paid tier (never auto-suggests tier 2/3); `tier2-only` stays
+in the tier-2 pool and never falls back to free.
 
 ## `preflight.py` — G0
 
@@ -81,7 +82,9 @@ gate.py owner --task SLUG [--json]
 SHA pinning (every revision is format-validated before a git call, so option-like
 values are rejected), clean worktree, diff scope, empty diff, secret paths and
 added-line tokens (redacted), independent reviewer families, reviewer severity,
-command exit codes and acceptance evidence, and tier2-only model compliance. `premerge` checks
+command exit codes and acceptance evidence, tier2-only model compliance, and
+`default` paid-tier approval compliance (tier 2/3 need a recorded owner
+approval). `premerge` checks
 a clean target host and takes a non-blocking serial lock; it never merges.
 `owner` checks G4 completeness.
 

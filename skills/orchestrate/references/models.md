@@ -1,6 +1,6 @@
 # Models, tiers and variants
 
-Verified against the live catalog on 2026-11-22. Model IDs and variants drift.
+Verified against the live catalog on 2026-11-26. Model IDs and variants drift.
 Refresh if this file is older than 14 days, before a large task, or whenever a
 launch fails:
 
@@ -36,6 +36,9 @@ Never retry a dead ID.
 | `hy4-flash-free` | hy | none, high |
 | `iceman-free` | iceman | none |
 | `big-pickle` | big-pickle | none |
+| `muse-ember-1.0` | muse | minimal, low, medium, high, xhigh, max |
+| `kimi-k3.1-pro` | kimi | low, high, max |
+| `seaglass-alpha-free` | seaglass | none |
 
 ## Tier 1 — free on `opencode-go`
 
@@ -44,8 +47,9 @@ Never retry a dead ID.
 | `beam-free` | beam | low, medium, high, xhigh, max |
 | `hy4-flash-free` | hy | none, high |
 | `iceman-contributor-free` | iceman | none |
+| `hungerg-free` | hungerg | none |
 
-## Tier 2 — pre-approved paid, open models
+## Tier 2 — paid open models (owner approval required)
 
 | Model | Family | Variants | USD per 1M in/out |
 | --- | --- | --- | --- |
@@ -57,22 +61,27 @@ Never retry a dead ID.
 | `minimax-m3.1-flash` | minimax | low, medium, high, xhigh, max | 0.15 / 0.60 |
 | `qwen3.8-flash` | qwen | none, low, medium, xhigh | 0.15 / 0.47 |
 
-Tier 2 is the pre-approved, cost-capped open-model pool. A model belongs here only
-when it is open-weight, priced at or below **$0.20 per 1M input and $0.60 per 1M
-output** tokens in every context tier, and is the newest version of its family in
-the live catalog. The table lists the current members; add an equivalent model by
-editing this file, verifying the live catalog, removing any duplicate tier 3 row
-and running `scripts/validate-models.py`. Never add a model by inference at launch.
+Tier 2 is the cost-capped open-model pool. It is NOT pre-approved: every tier 2
+launch needs the owner to explicitly say to use it, recorded with
+`task.py approve --task <slug> --scope "tier 2 <reason>"` before the first paid
+launch. The orchestrator never prompts for tier 2 under `default`. A model belongs
+here only when it is open-weight, priced at or below
+**$0.20 per 1M input and $0.60 per 1M output** tokens in every context tier, and is
+the newest version of its family in the live catalog. The table lists the current
+members; add an equivalent model by editing this file, verifying the live catalog,
+removing any duplicate tier 3 row and running `scripts/validate-models.py`. Never
+add a model by inference at launch.
 
-Tier 2 is pre-approved; use it for hard units after free tiers stall, when a free
-twin does not exist, or when no free reviewer from a different family is available.
+Tier 2 is owner-approved only; use it for hard units after free tiers stall, when a
+free twin does not exist, or when no free reviewer from a different family is
+available - and only after the approval is recorded.
 
 Reviewer selection: put the implementer's model and family in the reviewer brief,
-then prefer a free model from a different family before spending tier 2. Reserve
-`muse-spark-1.3-contributor#high` for high-risk units, hard diffs, or when no free
-different family is available. If the only available reviewer is the implementer's
-family, report BLOCKED instead of running a non-independent review. The reviewer
-agent default is a fallback, not the policy.
+then prefer a free model from a different family. A tier-2 reviewer (e.g.
+`muse-spark-1.3-contributor#high` for high-risk units or hard diffs) only after the
+owner has explicitly said to use tier 2. If the only available reviewer is the
+implementer's family, report BLOCKED instead of running a non-independent review.
+The reviewer agent default is a fallback, not the policy.
 
 ## Tier 2 only policy
 
@@ -94,33 +103,17 @@ The owner enables it; never infer it. In this mode:
 
 ## Tier 3 — owner approval required
 
+Tier 3, like tier 2, is forbidden by default. Under `default` the orchestrator
+may only use it after the owner explicitly says to (tier 3 may be requested via
+the `question` tool + `task.py approve --task <slug> --scope "tier 3 <reason>"`).
 Everything not listed above. Common examples (superseded versions of a pool model
 also stay here):
 
 | Model | Family | Variants | USD per 1M in/out |
 | --- | --- | --- | --- |
-| `qwen3.8-max` | qwen | none, low, medium, xhigh | 2.00 / 6.00 |
-| `grok-4.7` | grok | low, medium, high, xhigh | 2.00 / 6.00 |
-| `kimi-k3.1-pro` | kimi | low, high, max | 2.00 / 10.00 |
-| `gemini-4-argon` | gemini | low, medium, high | 2.00 / 10.00 |
-| `claude-haiku-5-5` | claude | none, low, medium, high, xhigh, max | 0.10 / 0.50 |
-| `gpt-6-luna` | gpt | none, low, medium, high, xhigh, max | 0.10 / 0.50 |
-| `gpt-5.6-luna` | gpt | none, low, medium, high, xhigh, max | 0.20 / 1.20 |
-| `qwen3.7-plus` | qwen | none, high, max | 0.40 / 1.60 |
-| `qwen4-max` | qwen | none, low, high, xhigh | 1.50 / 4.50 |
-| `glm-5.3` | glm | low, high, max | 1.40 / 4.40 |
-| `deepseek-v4-pro` | deepseek | high, max | 0.66 / 1.98 |
 | `hy4` | hy | none, high | 0.834 / 2.501 |
 | `hy4-preview` | hy | none, high | 0.834 / 2.501 |
-| `mimo-v2.6-pro` | mimo | none | 0.435 / 0.87 |
-| `mimo-v2.5-pro` | mimo | none | 0.435 / 0.87 |
-| `step-5-preview` | step | low, medium, high | 1.00 / 2.70 |
-| `kimi-k3` | kimi | max | 3.00 / 15.00 |
-| `kimi-k2.7-code` | kimi | none | 0.95 / 4.00 |
 | `longcat-2.5` | longcat | none | 0.30 / 1.20 |
-| `minimax-m3` | minimax | none, thinking | 0.30 / 1.20 |
-| `mimo-v2.5` | mimo | none | 0.14 / 0.28 |
-| `muse-spark-1.2-contributor` | muse | minimal, low, medium, high, xhigh | 0.10 / 0.20 |
 
 The `deepseek` provider also exposes `deepseek-flash` (none, low, high, max;
 0.15/0.60) and `deepseek-v4-pro` (none, low, high, max; 0.66/1.98). Treat both
@@ -151,7 +144,7 @@ as tier 3.
 | Task | First choice | Review with |
 | --- | --- | --- |
 | Code edits, features, fixes | `deepseek-v4.1-flash-free`, `flint-40b-free`, `beam-free` | different family: beam vs deepseek vs glm vs muse |
-| Architecture, design, hard debugging | `beam-free#max`, `deepseek-v4.1-flash-free#max`, then tier 2 | `muse-spark-1.3-contributor#high` |
+| Architecture, design, hard debugging | `beam-free#max`, `deepseek-v4.1-flash-free#max`, then tier 2 only with owner approval | `muse-spark-1.3-contributor#high` only with owner approval |
 | Exploration, large reads, summarization | `nemotron-3.5-super-vl-free`, `beam-free#low`, `hy4-flash-free` | n/a (read-only) |
 | Low-effort: commits, renames, logs, one-line docs | `big-pickle`, `mimo-v2.6-flash-free`, `beam-free#low` | none |
 | Multimodal or screenshot inspection | `nemotron-3.5-super-vl-free` | n/a |
@@ -163,12 +156,14 @@ as tier 3.
 | --- | --- | --- |
 | effort low | tier 0 low/no variant, or `utility` | none, unless risk applies |
 | effort medium | tier 0 high | one reviewer |
-| effort high | tier 0 max/xhigh, tier 1 max, then tier 2 | one reviewer, tier 2 allowed |
+| effort high | tier 0 max/xhigh, tier 1 max, then tier 2 only with owner approval | one reviewer, tier 2 only with owner approval |
 | risk normal | any | one reviewer |
 | risk security / persistent-data / public-api | high effort | two independent reviewers from two distinct families other than the implementer's; no migration execution against shared data |
 
-Under `tier2-only`, read every tier reference in this table as the tier-2 pool:
-effort low uses a low or no variant, medium uses medium/high, high uses
+Under `default`, tier 2 and tier 3 rows in this table are usable only after the
+owner has explicitly said to use that tier; otherwise treat the unit as BLOCKED and
+ask. Under `tier2-only`, read every tier reference in this table as the tier-2
+pool: effort low uses a low or no variant, medium uses medium/high, high uses
 high/xhigh/max; reviewer policy is unchanged and uses other tier-2 families.
 
 Risk raises review depth; it does not block delegation or auto-merge. The two

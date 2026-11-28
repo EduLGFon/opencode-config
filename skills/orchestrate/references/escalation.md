@@ -6,16 +6,20 @@ Escalate one dimension at a time.
 
 ## Model policies
 
-`default` follows the free-first ladder. `tier2-only` is the owner-enabled
-task-wide policy: every worker, utility, explore and reviewer runs on the tier-2
-pool, and escalation never leaves it. The matrix below is written for `default`;
-apply these substitutions under `tier2-only`:
+`default` allows tiers 0-1 only. Tier 2 and tier 3 are used only after the owner
+explicitly says to; the orchestrator never prompts for them. Each paid launch
+needs a recorded owner approval (`task.py approve --scope "tier 2 <reason>"` or
+`"tier 3 <reason>"`; tier 3 may also be requested via the `question` tool) before
+the first paid launch. `tier2-only` is the owner-enabled task-wide policy: every
+worker, utility, explore and reviewer runs on the tier-2 pool, and escalation
+never leaves it. The matrix below is written for `default`; apply these
+substitutions under `tier2-only`:
 
 | `default` step | `tier2-only` step |
 | --- | --- |
 | free twin | another tier-2 family |
-| next tier | raise the variant, then another tier-2 family |
-| tier 2 | BLOCKED; the owner decides whether to lift the policy |
+| next free tier | raise the variant, then another tier-2 family |
+| tier 2 / tier 3 | BLOCKED; the owner decides whether to approve the tier or lift the policy |
 
 Never leave the active policy to recover from a quota error, a missing model or a
 failed attempt.
@@ -39,8 +43,8 @@ record failed launches with `task.py call --error`.
 
 | Symptom | Action |
 | --- | --- |
-| timeout, network error, 429, quota error | retry once, same model and variant; then free twin; then tier 2 same family. `tier2-only`: retry once, then another tier-2 family; never a free tier. |
-| model unavailable or not found | refresh `references/models.md` from the `models` tool, use the free twin or next tier, and update the reference. Never retry the dead ID. Under `tier2-only`, switch to another tier-2 family. |
+| timeout, network error, 429, quota error | retry once, same model and variant; then free twin; then BLOCKED and report (no paid tier unless the owner explicitly says so). `tier2-only`: retry once, then another tier-2 family; never a free tier. |
+| model unavailable or not found | refresh `references/models.md` from the `models` tool, use the free twin or next free tier, and update the reference. Never retry the dead ID and never move to a paid tier without a recorded owner approval. Under `tier2-only`, switch to another tier-2 family. |
 | worker returns BLOCKED | read the reason. Bad brief or missing context: resume the same session with the missing facts. Environment or access problem: fix the environment or reassign, do not bump the model. A BLOCKED unit is never merged. |
 | worker returns NO-OP | confirm the objective is already satisfied, report it and discard the worktree. Never merge an empty commit. |
 | shallow output, missed files, ignored constraints | resume same session, same model, one variant up |
@@ -51,7 +55,7 @@ record failed launches with `task.py call --error`.
 | emergent dependency | stop the unit, set `depends-on`, and run it in the next wave after the other unit merges. Do not let it edit the other unit's files. |
 | ownership change needed | stop the unit, update owned paths in the ledger, re-check every other unit for overlap, then resume. If overlap is unavoidable, merge the units or re-plan. |
 | shared contract change | stop every affected unit and re-plan. Do not let workers invent incompatible contracts. |
-| still failing after the effort bump | next tier, same family, same session; under `tier2-only`, another tier-2 family, same session |
+| still failing after the effort bump | `default`: BLOCKED and report (no paid tier unless the owner explicitly says so); under `tier2-only`, another tier-2 family, same session |
 | no completion notice within the effort bound | treat as stalled: keep the worktree and branch, mark the unit blocked, and relaunch in a fresh worktree with a tighter brief. Never poll in a loop. |
 | ambiguous requirement or design conflict | stop the unit and ask the owner with the `question` tool. Do not merge on green checks alone. |
 | security, privacy, schema or public-contract risk | keep the unit delegated at high effort; require two independent reviewers from distinct families; auto-merge only on dual PASS and green checks. |
@@ -109,9 +113,10 @@ model, variant, session ID and failing evidence for every attempt.
 ## Escalation rules
 
 - Change one thing per attempt: variant or model, never both.
-- Prefer a free twin before paying. Prefer a higher variant before a new family.
-  Under `tier2-only`, skip the free twin and switch to the cheaper tier-2 family
-  after the variant step.
+- Prefer a free twin before even asking to pay. Prefer a higher variant before a
+  new family. A paid tier only with a recorded owner approval. Under `tier2-only`,
+  skip the free twin and switch to the cheaper tier-2 family after the variant
+  step.
 - Never invent a variant. Models with no variants escalate by twin or tier.
 - On a resume, send only the findings, the diff summary and the new acceptance
   criteria. Keep the same session so context survives.

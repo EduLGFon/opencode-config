@@ -96,7 +96,8 @@ PASS. Risk units need two PASS verdicts from two distinct families other than th
 implementer's. Reviewers do not share findings; disagreement is FAIL.
 
 Under `tier2-only`, reviewer families come from the tier-2 pool. Under `default`,
-prefer a free different family, then a tier-2 reviewer.
+prefer a free different family; a tier-2 reviewer only after the owner has explicitly
+said to use tier 2.
 
 ## Secrets
 

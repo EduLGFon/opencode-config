@@ -72,9 +72,9 @@ PASS. Use `tasklib.required_reviews` / `approved_review_families` to gate PASS.
   `inkling`) at no variant.
 - Utility/mechanical edits (commits, renames, formatting): `big-pickle`,
   `mimo-v2.6-flash-free`, `beam-free#low`.
-- Implementation: free flash family first; escalate variant, then family, then tier.
-- Paid (tier 2) only after a recorded failure or when no free different-family
-  reviewer exists.
+- Implementation: free flash family first; escalate variant, then family, then free twin. A paid tier only with a recorded owner approval.
+- Paid (tier 2/3) only after a recorded owner approval plus a recorded failure or
+  when no free different-family reviewer exists.
 - Avoid `max`/`xhigh` by default; raise the variant one step before switching
   families; prefer twin over new tier.
 - Under `tier2-only`, every call is paid (explore and utility included); caps in

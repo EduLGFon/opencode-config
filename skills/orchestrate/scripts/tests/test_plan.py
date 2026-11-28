@@ -267,6 +267,15 @@ class PlanTestCase(unittest.TestCase):
         # 10000/1M * 0.15 + 2000/1M * 0.60 = 0.0027
         self.assertAlmostEqual(data["estimate_usd"], 0.0027, places=9)
 
+    def test_default_paid_model_warns_for_approval(self):
+        spec = self.make_spec(
+            [base_unit("u1", model="opencode-go/deepseek-v4.1-flash#max")]
+        )
+        code, out, err = self.run_plan(["plan", self.write_spec(spec), "--json"])
+        self.assertEqual(code, 0, err)
+        data = json.loads(out)
+        self.assertTrue(any("tier 2" in w and "approval" in w for w in data["warnings"]))
+
     def test_tier2_only_policy_warns_but_does_not_error(self):
         spec = self.make_spec([base_unit("u1", model="opencode/beam-free#high")], policy="tier2-only")
         code, out, err = self.run_plan(["plan", self.write_spec(spec), "--json"])

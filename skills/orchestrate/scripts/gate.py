@@ -562,8 +562,28 @@ def g2_checks(manifest: dict, slug: str, uid: str) -> tuple[list[dict], list[str
 
     policy_value = manifest.get("policy", {})
     policy = policy_value.get("name") if isinstance(policy_value, dict) else None
-    if policy != "tier2-only":
-        ok("tier_policy", f"policy is {policy}, tier 2 not required")
+    if policy == "default":
+        problems = []
+        approvals = manifest.get("approvals", [])
+        model = unit.get("model")
+        tier = tasklib.model_tier(model) if model else None
+        if tier in (2, 3):
+            need = f"tier {tier}"
+            if not any(need in str(a.get("scope", "")).lower() for a in approvals):
+                problems.append(f"unit model {model} is tier {tier} without a recorded {need} approval")
+        for index, call in enumerate(manifest.get("calls", [])):
+            if not isinstance(call, dict):
+                continue
+            if call.get("unit") == uid and call.get("tier") in (2, 3):
+                need = f"tier {call.get('tier')}"
+                if not any(need in str(a.get("scope", "")).lower() for a in approvals):
+                    problems.append(f"call {index} ({call.get('role')}) is tier {call.get('tier')} without a recorded {need} approval")
+        if problems:
+            fail("tier_policy", "; ".join(problems))
+        else:
+            ok("tier_policy", "no paid tier used without owner approval")
+    elif policy != "tier2-only":
+        ok("tier_policy", f"policy is {policy}, tier policy not enforced")
     else:
         problems: list[str] = []
         model = unit.get("model")

@@ -79,7 +79,7 @@ class TaskLibTest(unittest.TestCase):
             uid,
             fields.pop("objective", "do the thing"),
             fields.pop("owned_paths", ["src/x.py"]),
-            model=fields.pop("model", "opencode-go/deepseek-v4.1-flash#max"),
+            model=fields.pop("model", "opencode/deepseek-v4.1-flash-free#max"),
             implementer_family=fields.pop("implementer_family", "deepseek"),
             state=fields.pop("state", "running"),
             **fields,
@@ -245,6 +245,33 @@ class TaskLibTest(unittest.TestCase):
             manifest, None, "utility", "opencode-go/muse-spark-1.3-contributor#high", 2, "DONE"
         )
         self.assertEqual(call["tier"], 2)
+
+    def test_default_policy_max_tier_is_one(self) -> None:
+        manifest = self.make_manifest(policy="default")
+        self.assertEqual(manifest["policy"]["max_tier"], 1)
+        self.assertTrue(manifest["policy"]["allow_free"])
+
+    def test_default_paid_call_needs_owner_approval(self) -> None:
+        manifest = self.make_manifest(policy="default")
+        self.add_unit(manifest, model="opencode/beam-free#max", implementer_family="beam")
+        tasklib.add_call(
+            manifest, "u1", "worker", "opencode-go/deepseek-v4.1-flash#max", 2, "DONE"
+        )
+        _, warnings = tasklib.validate_manifest(manifest)
+        self.assertTrue(any("tier 2" in w and "approval" in w for w in warnings))
+        manifest["approvals"].append({"at": "now", "scope": "tier 2 hard unit"})
+        _, warnings = tasklib.validate_manifest(manifest)
+        self.assertFalse(any("tier 2" in w and "approval" in w for w in warnings))
+
+    def test_default_paid_unit_model_needs_owner_approval(self) -> None:
+        manifest = self.make_manifest(policy="default")
+        self.add_unit(
+            manifest,
+            model="opencode-go/deepseek-v4.1-flash#max",
+            implementer_family="deepseek",
+        )
+        _, warnings = tasklib.validate_manifest(manifest)
+        self.assertTrue(any("tier 2" in w and "approval" in w for w in warnings))
 
     def test_tier2_only_manifest_rejects_free_unit_model(self) -> None:
         manifest = self.make_manifest(policy="tier2-only")

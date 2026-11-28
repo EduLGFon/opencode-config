@@ -87,8 +87,8 @@ Launch the reviewer with the brief in `references/briefs.md`, the implementer's
 model and family, and an explicitly chosen model:
 
 - `default`: a free model from a family different from the implementer's, first
-- `default`: the tier 2 reviewer family in `references/models.md` for high-risk or
-  hard units
+- `default`: the tier-2 reviewer family in `references/models.md` for high-risk or
+  hard units, only after the owner has explicitly said to use tier 2
 - `tier2-only`: a different tier-2 family; never a free model or tier 3
 - never the implementer's family, and never the agent default by accident
 

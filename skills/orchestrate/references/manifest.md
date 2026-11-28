@@ -28,7 +28,7 @@ manifest into the product repository.
   "created_at": "2026-11-17T17:00:00Z",
   "updated_at": "2026-11-17T17:20:00Z",
   "target": {"repo": "/work/app", "ref": "main", "start_sha": "abc1234"},
-  "policy": {"name": "default", "max_tier": 3, "allow_free": true},
+  "policy": {"name": "default", "max_tier": 1, "allow_free": true},
   "budget": {"limit_usd": 5.0, "spent_usd": 0.42},
   "approvals": [{"at": "...", "scope": "tier 3 reviewer", "note": "owner approved"}],
   "contracts": [{"path": "api/openapi.yaml", "sha256": "..."}],
@@ -88,7 +88,7 @@ manifest into the product repository.
 | Field | Meaning |
 | --- | --- |
 | `target` | Product repo, integration ref and the start SHA. Worktrees must branch from it. |
-| `policy` | `default` or `tier2-only`; `max_tier` and `allow_free` are derived and validated. |
+| `policy` | `default` (tiers 0-1, `max_tier` 1) or `tier2-only` (`max_tier` 2); `max_tier` and `allow_free` are derived and validated. Tier 2/3 under `default` need a recorded owner approval. |
 | `budget` | Optional USD ceiling. `spent_usd` is computed from recorded calls and model prices. |
 | `approvals` | Owner decisions with scope: tier 3, policy lift, force removal, non-git work. |
 | `contracts` | Shared files and their hashes at task start; a change stops affected units. |
@@ -152,6 +152,7 @@ before a report exists.
 - A passed or merged unit has a worker SHA and the required number of independent
   PASS verdicts.
 - A `tier2-only` task records tier 2 calls only.
+- A `default` task records tier 0/1 calls; every tier 2 or tier 3 call needs a recorded `tier 2` / `tier 3` owner approval.
 - Spend is append-only; do not edit `spent_usd` by hand.
 - Never store secrets, tokens or customer data in any field. Use paths and hashes.
 

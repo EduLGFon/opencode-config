@@ -53,7 +53,8 @@ def policy_suggestions(policy: str, rate_limited: bool) -> list[str]:
         ]
     return [
         "Rate limits: retry once with the same model and variant, then switch to the "
-        "free twin, then the tier-2 same family (see references/models.md)."
+        "free twin. A paid tier only with a recorded owner approval "
+        "(see references/models.md); otherwise mark the unit blocked and ask the owner."
     ]
 
 

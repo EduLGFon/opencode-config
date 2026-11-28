@@ -99,8 +99,8 @@ class GateTests(unittest.TestCase):
             "acceptance": [{"criterion": "feature works", "pass": acceptance_pass}],
             "findings": [],
             "usage": {"tokens_in": 10, "tokens_out": 5},
-            "model": "opencode-go/deepseek-v4.1-flash#max",
-            "tier": 2,
+            "model": "opencode/deepseek-v4.1-flash-free#max",
+            "tier": 0,
             "family": "deepseek",
         }
         paths = []
@@ -136,7 +136,7 @@ class GateTests(unittest.TestCase):
         owned: tuple[str, ...] = ("src/",),
         risk: str = "normal",
         policy: str = "default",
-        model: str = "opencode-go/deepseek-v4.1-flash#max",
+        model: str = "opencode/deepseek-v4.1-flash-free#max",
         implementer: str = "deepseek",
         families: tuple[str, ...] = ("beam",),
         findings: list[dict] | None = None,
@@ -506,6 +506,25 @@ class GateTests(unittest.TestCase):
         proc, payload = self.unit_gate()
         self.assertEqual(proc.returncode, 1, proc.stderr)
         self.assertFalse(self.check(payload, "worker_evidence")["pass"])
+
+    def test_default_paid_tier_needs_owner_approval(self) -> None:
+        wt = self.add_worktree()
+        head = self.commit(wt, "src/feature.py", "x = 1\n")
+        self.build_task(
+            wt,
+            head,
+            policy="default",
+            model="opencode-go/deepseek-v4.1-flash#max",
+        )
+        proc, payload = self.unit_gate()
+        self.assertEqual(proc.returncode, 1, proc.stderr)
+        self.assertFalse(self.check(payload, "tier_policy")["pass"])
+        manifest = json.loads((self.state / "demo" / "task.json").read_text())
+        manifest["approvals"].append({"at": "now", "scope": "tier 2 hard unit"})
+        self.save_manifest(manifest)
+        proc, payload = self.unit_gate()
+        self.assertEqual(proc.returncode, 0, proc.stderr + proc.stdout)
+        self.assertTrue(self.check(payload, "tier_policy")["pass"])
 
     def test_tier2_only_policy_enforced(self) -> None:
         wt = self.add_worktree()
